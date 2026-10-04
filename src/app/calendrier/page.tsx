@@ -49,7 +49,7 @@ export default async function CalendrierPage({
       })
     : [];
 
-  const myAnilistIds = myEntries.map((e) => e.media.anilistId);
+  const myAnilistIds = myEntries.map((entry: { media: { anilistId: number } }) => entry.media.anilistId);
 
   const dayKeys = weekDays.map((d) => parisDateKey(d));
   const byDayKey = new Map(dayKeys.map((k) => [k, [] as typeof airing]));
