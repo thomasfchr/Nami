@@ -7,8 +7,14 @@ const globalForPrisma = globalThis as unknown as {
 
 // Une seule connexion : la base locale de dev (`prisma dev`) mélange les
 // instructions préparées entre connexions concurrentes et coupe les sessions au repos.
+const connectionString = process.env.DATABASE_URL;
+
+// Supabase impose SSL ; la base locale (`prisma dev`) n'en a pas.
+const isLocalDb = /@(localhost|127\.0\.0\.1)[:/]/.test(connectionString ?? "");
+
 const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
+  ssl: isLocalDb ? undefined : { rejectUnauthorized: false },
   max: 1,
   idleTimeoutMillis: 3000,
   keepAlive: true,
