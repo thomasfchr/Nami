@@ -5,7 +5,7 @@ import {
   getSeasonPopular,
   getPopular,
   getClassics,
-  getRecentlyAiredIds,
+  getRecentlyAired,
 } from "@/lib/anilist/home";
 import { toCardDataFromPrismaMedia, type MediaCardData } from "@/lib/anilist/cache";
 import {
@@ -32,12 +32,13 @@ export async function CatalogueHome({ type }: { type: "ANIME" | "MANGA" }) {
   const toCatchUp = await getToCatchUp(userId, type);
 
   if (type === "ANIME") {
-    const [airingThisWeek, seasonPopular, classics, recentlyAired] = await Promise.all([
-      getAiringThisWeek(),
-      getSeasonPopular(),
-      getClassics("ANIME"),
-      getRecentlyAiredIds(),
-    ]);
+    const [airingThisWeek, seasonPopular, classics, { ids: recentlyAired, latest }] =
+      await Promise.all([
+        getAiringThisWeek(),
+        getSeasonPopular(),
+        getClassics("ANIME"),
+        getRecentlyAired(),
+      ]);
 
     const withNewBadge = (items: MediaCardData[]) =>
       items.map((item) => ({
@@ -45,14 +46,16 @@ export async function CatalogueHome({ type }: { type: "ANIME" | "MANGA" }) {
         isNewEpisode: item.isNewEpisode || recentlyAired.has(item.anilistId),
       }));
 
-    const heroMedia = nextUp
-      ? toCardDataFromPrismaMedia(nextUp)
-      : (airingThisWeek[0] ?? seasonPopular[0] ?? null);
-    const heroInList = nextUp
-      ? true
-      : heroMedia
-        ? Boolean(await getMyListEntry(userId, heroMedia.anilistId))
-        : false;
+    // Le héros suit la dernière sortie : il change à chaque nouvel épisode diffusé.
+    const heroMedia =
+      latest ??
+      (nextUp ? toCardDataFromPrismaMedia(nextUp) : null) ??
+      airingThisWeek[0] ??
+      seasonPopular[0] ??
+      null;
+    const heroInList = heroMedia
+      ? Boolean(await getMyListEntry(userId, heroMedia.anilistId))
+      : false;
 
     return (
       <div className="flex flex-col gap-10 pb-10">

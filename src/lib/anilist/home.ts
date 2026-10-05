@@ -154,10 +154,23 @@ export async function getAiringInRange(
   }));
 }
 
-/** Identifiants des séries ayant diffusé un épisode dans les dernières 48 h (badge « Nouvel épisode »). */
-export async function getRecentlyAiredIds(): Promise<Set<number>> {
+/**
+ * Séries populaires ayant diffusé un épisode dans les dernières 48 h :
+ * leurs identifiants (badge « Nouvel épisode ») et la sortie la plus récente (héros d'accueil).
+ */
+export async function getRecentlyAired(): Promise<{
+  ids: Set<number>;
+  latest: AiringThisWeekItem | null;
+}> {
   const now = Math.floor(Date.now() / 1000);
   const ids = await getPopularReleasingIds();
   const schedules = await getSchedulesForIds(ids, now - 48 * 60 * 60, now);
-  return new Set(schedules.map((s) => s.media.id));
+  // Triées par date croissante : la dernière émission est la sortie la plus récente.
+  const last = schedules.at(-1);
+  return {
+    ids: new Set(schedules.map((s) => s.media.id)),
+    latest: last
+      ? { ...toCardData(last.media), episode: last.episode, airingAt: last.airingAt }
+      : null,
+  };
 }
