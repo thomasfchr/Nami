@@ -184,8 +184,9 @@ export async function getRecentlyAired(): Promise<{
   const now = floorTo(Math.floor(Date.now() / 1000), 10 * MINUTE);
   const ids = await getPopularReleasingIds();
   const schedules = await getSchedulesForIds(ids, now - 48 * HOUR, now);
-  // Triées par date croissante : la dernière émission est la sortie la plus récente.
-  const last = schedules.at(-1);
+  // Triées par date croissante : la dernière émission avec une bannière est la
+  // sortie la plus récente affichable en héros.
+  const last = schedules.findLast((s) => s.media.bannerImage);
   return {
     ids: new Set(schedules.map((s) => s.media.id)),
     latest: last

@@ -47,11 +47,11 @@ export async function CatalogueHome({ type }: { type: "ANIME" | "MANGA" }) {
       }));
 
     // Le héros suit la dernière sortie : il change à chaque nouvel épisode diffusé.
+    // Uniquement des séries avec une bannière, sans quoi le haut de page reste vide.
+    const nextUpCard = nextUp ? toCardDataFromPrismaMedia(nextUp) : null;
     const heroMedia =
       latest ??
-      (nextUp ? toCardDataFromPrismaMedia(nextUp) : null) ??
-      airingThisWeek[0] ??
-      seasonPopular[0] ??
+      [nextUpCard, ...airingThisWeek, ...seasonPopular].find((media) => media?.bannerUrl) ??
       null;
     const heroInList = heroMedia
       ? Boolean(await getMyListEntry(userId, heroMedia.anilistId))
@@ -77,12 +77,11 @@ export async function CatalogueHome({ type }: { type: "ANIME" | "MANGA" }) {
 
   const [popular, classics] = await Promise.all([getPopular("MANGA"), getClassics("MANGA")]);
 
-  const heroMedia = nextUp ? toCardDataFromPrismaMedia(nextUp) : (popular[0] ?? null);
-  const heroInList = nextUp
-    ? true
-    : heroMedia
-      ? Boolean(await getMyListEntry(userId, heroMedia.anilistId))
-      : false;
+  const nextUpCard = nextUp ? toCardDataFromPrismaMedia(nextUp) : null;
+  const heroMedia = [nextUpCard, ...popular].find((media) => media?.bannerUrl) ?? null;
+  const heroInList = heroMedia
+    ? Boolean(await getMyListEntry(userId, heroMedia.anilistId))
+    : false;
 
   return (
     <div className="flex flex-col gap-10 pb-10">
