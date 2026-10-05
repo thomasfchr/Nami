@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 
 const ANILIST_API_URL = process.env.ANILIST_API_URL ?? "https://graphql.anilist.co";
 
@@ -62,4 +63,22 @@ export async function anilistFetch<TData>(
   }
 
   return json.data as TData;
+}
+
+/**
+ * Variante mise en cache (Data Cache Next, partagé entre les instances) : les
+ * rangées d'accueil et le calendrier changent peu, inutile de rappeler AniList
+ * à chaque navigation. Les variables font partie de la clé : arrondir les
+ * horodatages côté appelant pour que le cache serve.
+ */
+export function anilistFetchCached<TData>(
+  query: string,
+  variables: Record<string, unknown>,
+  revalidateSeconds: number,
+): Promise<TData> {
+  return unstable_cache(
+    () => anilistFetch<TData>(query, variables),
+    ["anilist", query, JSON.stringify(variables)],
+    { revalidate: revalidateSeconds, tags: ["anilist"] },
+  )();
 }

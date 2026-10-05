@@ -5,7 +5,7 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Une seule connexion : la base locale de dev (`prisma dev`) mélange les
+// Une seule connexion en local : la base locale de dev (`prisma dev`) mélange les
 // instructions préparées entre connexions concurrentes et coupe les sessions au repos.
 const connectionString = process.env.DATABASE_URL;
 
@@ -15,7 +15,7 @@ const isLocalDb = /@(localhost|127\.0\.0\.1)[:/]/.test(connectionString ?? "");
 const adapter = new PrismaPg({
   connectionString,
   ssl: isLocalDb ? undefined : { rejectUnauthorized: false },
-  max: 1,
+  max: isLocalDb ? 1 : 5,
   idleTimeoutMillis: 3000,
   keepAlive: true,
 });
