@@ -5,8 +5,9 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Une seule connexion en local : la base locale de dev (`prisma dev`) mélange les
-// instructions préparées entre connexions concurrentes et coupe les sessions au repos.
+// Une seule connexion : la base locale de dev (`prisma dev`) mélange les
+// instructions préparées entre connexions concurrentes et coupe les sessions au repos,
+// et le pooler Supabase en mode session plafonne à 15 clients pour toutes les instances.
 const connectionString = process.env.DATABASE_URL;
 
 // Supabase impose SSL ; la base locale (`prisma dev`) n'en a pas.
@@ -15,7 +16,7 @@ const isLocalDb = /@(localhost|127\.0\.0\.1)[:/]/.test(connectionString ?? "");
 const adapter = new PrismaPg({
   connectionString,
   ssl: isLocalDb ? undefined : { rejectUnauthorized: false },
-  max: isLocalDb ? 1 : 5,
+  max: 1,
   idleTimeoutMillis: 3000,
   keepAlive: true,
 });
